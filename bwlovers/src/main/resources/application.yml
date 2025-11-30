@@ -10,3 +10,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+ai:
+  server:
+    url: http://localhost:8000
