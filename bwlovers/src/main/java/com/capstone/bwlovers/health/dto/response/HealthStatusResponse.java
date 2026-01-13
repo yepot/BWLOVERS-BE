@@ -1,5 +1,6 @@
 package com.capstone.bwlovers.health.dto.response;
 
+import com.capstone.bwlovers.global.entity.BaseTimeEntity;
 import com.capstone.bwlovers.health.domain.*;
 import com.capstone.bwlovers.health.domain.healthType.ChronicDiseaseType;
 import com.capstone.bwlovers.health.domain.healthType.PregnancyComplicationType;
@@ -19,7 +20,6 @@ public class HealthStatusResponse {
     private Long statusId;
     private Long userId;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
     private List<PastDiseaseResponse> pastDiseases;
     private List<ChronicDiseaseResponse> chronicDiseases;
@@ -62,7 +62,6 @@ public class HealthStatusResponse {
                 .statusId(status.getStatusId())
                 .userId(status.getUser().getUserId())
                 .createdAt(status.getCreatedAt())
-                .updatedAt(status.getUpdatedAt())
                 .pastDiseases(status.getPastDiseases().stream().map(HealthStatusResponse::toPast).toList())
                 .chronicDiseases(status.getChronicDiseases().stream().map(HealthStatusResponse::toChronic).toList())
                 .pregnancyComplications(status.getPregnancyComplications().stream().map(HealthStatusResponse::toComp).toList())

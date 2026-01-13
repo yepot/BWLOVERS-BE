@@ -1,6 +1,7 @@
 package com.capstone.bwlovers.health.domain;
 
 import com.capstone.bwlovers.auth.domain.User;
+import com.capstone.bwlovers.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class HealthStatus {
+public class HealthStatus extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,12 +26,6 @@ public class HealthStatus {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     @Setter
     private User user;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "healthStatus", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -43,16 +38,6 @@ public class HealthStatus {
     @OneToMany(mappedBy = "healthStatus", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PregnancyComplication> pregnancyComplications = new ArrayList<>();
-
-    @PrePersist
-    void prePersist() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 
     public void addPastDisease(PastDisease pd) {
         pastDiseases.add(pd);
@@ -74,4 +59,5 @@ public class HealthStatus {
         chronicDiseases.clear();
         pregnancyComplications.clear();
     }
+
 }

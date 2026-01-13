@@ -99,4 +99,65 @@ public class HealthStatusService {
         YearMonth yearMonth = YearMonth.parse(ym);
         return yearMonth.atDay(1);
     }
+
+    /*
+    산모 건강 정보 수정
+     */
+    @Transactional
+    public HealthStatusResponse updateHealthStatus(Long userId, HealthStatusRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_FOUND));
+
+        HealthStatus status = healthStatusRepository.findByUser(user)
+                .orElseThrow(() -> new CustomException(ExceptionCode.HEALTH_STATUS_NOT_FOUND));
+
+        // 기존 자식 엔티티 전체 삭제 후, 요청 값으로 재구성
+        status.clearChildren();
+
+        // 과거 병력
+        if (request.getPastDiseases() != null) {
+            for (HealthStatusRequest.PastDiseaseItem item : request.getPastDiseases()) {
+
+                LocalDate treatedAt = parseYearMonthToFirstDay(item.getPastLastTreatedAt());
+
+                PastDisease pd = PastDisease.builder()
+                        .pastDiseaseType(item.getPastDiseaseType())
+                        .pastCured(Boolean.TRUE.equals(item.getPastCured()))
+                        .pastLastTreatedAt(treatedAt)
+                        .build();
+
+                status.addPastDisease(pd);
+            }
+        }
+
+        // 만성 질환
+        if (request.getChronicDiseases() != null) {
+            for (HealthStatusRequest.ChronicDiseaseItem item : request.getChronicDiseases()) {
+
+                ChronicDisease cd = ChronicDisease.builder()
+                        .chronicDiseaseType(item.getChronicDiseaseType())
+                        .chronicOnMedication(Boolean.TRUE.equals(item.getChronicOnMedication()))
+                        .build();
+
+                status.addChronicDisease(cd);
+            }
+        }
+
+        // 이번 임신 확정 진단
+        if (request.getPregnancyComplications() != null) {
+            for (var type : request.getPregnancyComplications()) {
+
+                PregnancyComplication pc = PregnancyComplication.builder()
+                        .pregnancyComplicationType(type)
+                        .build();
+
+                status.addPregnancyComplication(pc);
+            }
+        }
+
+        HealthStatus saved = healthStatusRepository.save(status);
+        return HealthStatusResponse.from(saved);
+    }
+
 }

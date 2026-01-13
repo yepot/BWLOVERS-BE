@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users")
+@RequestMapping("/users/me/health-status")
 public class HealthStatusController {
 
     private final HealthStatusService healthStatusService;
@@ -20,7 +20,7 @@ public class HealthStatusController {
     /*
     POST /me/health-status : 산모 건강 상태 등록
      */
-    @PostMapping("/me/health-status")
+    @PostMapping
     public ResponseEntity<HealthStatusResponse> createHealthStatue(@Valid @RequestBody HealthStatusRequest request,
                                                                    @AuthenticationPrincipal User user) {
         HealthStatusResponse response = healthStatusService.createHealthStatus(user.getUserId(), request);
@@ -30,11 +30,20 @@ public class HealthStatusController {
     /*
     GET /me/health-status : 산모 건강 상태 조회
      */
-    @GetMapping("/me/health-status")
+    @GetMapping
     public ResponseEntity<HealthStatusResponse> getHealthStatus(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(healthStatusService.getHealthStatus(user.getUserId()));
     }
 
+    /*
+    PATCH /me/health-status : 산모 건강 상태 수정
+     */
+    @PutMapping
+    public ResponseEntity<HealthStatusResponse> updateHealthStatus(@Valid @RequestBody HealthStatusRequest request,
+                                                                   @AuthenticationPrincipal User user) {
+        HealthStatusResponse response = healthStatusService.createHealthStatus(user.getUserId(), request);
+        return ResponseEntity.ok(response);
+    }
 }
 
 
