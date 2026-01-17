@@ -24,9 +24,17 @@ public class PregnancyInfoResponse {
     private Boolean isMultiplePregnancy;
     private Integer miscarriageHistory;
 
-    private Long jobId;
-    private String jobName;
-    private Integer riskLevel;
+    private java.util.List<JobDto> jobs;
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class JobDto {
+        private Long jobId;
+        private String jobName;
+        private Integer riskLevel;
+    }
 
     public static PregnancyInfoResponse from(PregnancyInfo info) {
         return PregnancyInfoResponse.builder()
@@ -41,9 +49,13 @@ public class PregnancyInfoResponse {
                 .expectedDate(info.getExpectedDate())
                 .isMultiplePregnancy(info.getIsMultiplePregnancy())
                 .miscarriageHistory(info.getMiscarriageHistory())
-                .jobId(info.getJob().getJobId())
-                .jobName(info.getJob().getJobName())
-                .riskLevel(info.getJob().getRiskLevel())
+                .jobs(info.getJobs().stream()
+                        .map(j -> JobDto.builder()
+                                .jobId(j.getJobId())
+                                .jobName(j.getJobName())
+                                .riskLevel(j.getRiskLevel())
+                                .build())
+                        .toList())
                 .build();
     }
 }

@@ -51,9 +51,21 @@ public class PregnancyInfo {
     @Column(name = "miscarriage_history", nullable = false)
     private Integer miscarriageHistory;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "job_id", nullable = false)
-    private Job job;
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "pregnancy_info_jobs",
+            joinColumns = @JoinColumn(name = "info_id"),
+            inverseJoinColumns = @JoinColumn(name = "job_id")
+    )
+    private java.util.Set<Job> jobs = new java.util.LinkedHashSet<>();
+
+    public void clearJobs() {
+        this.jobs.clear();
+    }
+
+    public void addJob(Job job) {
+        this.jobs.add(job);
+    }
 
     public void update(
             LocalDate birthDate,
@@ -64,8 +76,7 @@ public class PregnancyInfo {
             Integer gestationalWeek,
             LocalDate expectedDate,
             Boolean isMultiplePregnancy,
-            Integer miscarriageHistory,
-            Job job
+            Integer miscarriageHistory
     ) {
         this.birthDate = birthDate;
         this.height = height;
@@ -76,6 +87,5 @@ public class PregnancyInfo {
         this.expectedDate = expectedDate;
         this.isMultiplePregnancy = isMultiplePregnancy;
         this.miscarriageHistory = miscarriageHistory;
-        this.job = job;
     }
 }

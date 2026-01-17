@@ -19,5 +19,5 @@ public class PregnancyInfoRequest {
     private LocalDate expectedDate;
     private Boolean isMultiplePregnancy;
     private Integer miscarriageHistory;
-    private Long jobId;
+    private java.util.List<Long> jobIds;
 }

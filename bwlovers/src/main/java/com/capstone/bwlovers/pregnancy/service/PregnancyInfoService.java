@@ -4,7 +4,6 @@ import com.capstone.bwlovers.auth.domain.User;
 import com.capstone.bwlovers.auth.repository.UserRepository;
 import com.capstone.bwlovers.global.exception.CustomException;
 import com.capstone.bwlovers.global.exception.ExceptionCode;
-import com.capstone.bwlovers.pregnancy.domain.Job;
 import com.capstone.bwlovers.pregnancy.domain.PregnancyInfo;
 import com.capstone.bwlovers.pregnancy.dto.request.PregnancyInfoRequest;
 import com.capstone.bwlovers.pregnancy.dto.response.PregnancyInfoResponse;
@@ -29,8 +28,6 @@ public class PregnancyInfoService {
     public PregnancyInfoResponse createPregnancyInfo(Long userId, PregnancyInfoRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_FOUND));
-        Job job = jobRepository.findById(request.getJobId())
-                .orElseThrow(() -> new CustomException(ExceptionCode.JOB_NOT_FOUND));
 
         PregnancyInfo info = pregnancyInfoRepository.findByUser(user)
                 .orElseGet(() -> PregnancyInfo.builder().user(user).build());
@@ -44,12 +41,19 @@ public class PregnancyInfoService {
                 request.getGestationalWeek(),
                 request.getExpectedDate(),
                 request.getIsMultiplePregnancy(),
-                request.getMiscarriageHistory(),
-                job
+                request.getMiscarriageHistory()
         );
 
-        PregnancyInfo saved = pregnancyInfoRepository.save(info);
-        return PregnancyInfoResponse.from(saved);
+        info.clearJobs();
+        var jobIds = request.getJobIds() == null ? java.util.List.<Long>of() : request.getJobIds();
+        var jobs = jobRepository.findAllById(jobIds);
+
+        if (jobs.size() != jobIds.size()) {
+            throw new CustomException(ExceptionCode.JOB_NOT_FOUND);
+        }
+        jobs.forEach(info::addJob);
+
+        return PregnancyInfoResponse.from(pregnancyInfoRepository.save(info));
     }
 
     /*
@@ -75,12 +79,6 @@ public class PregnancyInfoService {
         PregnancyInfo info = pregnancyInfoRepository.findByUser(user)
                 .orElseThrow(() -> new CustomException(ExceptionCode.PREGNANCY_INFO_NOT_FOUND));
 
-        Job job = info.getJob();
-        if (request.getJobId() != null) {
-            job = jobRepository.findById(request.getJobId())
-                    .orElseThrow(() -> new CustomException(ExceptionCode.JOB_NOT_FOUND));
-        }
-
         info.update(
                 request.getBirthDate() != null ? request.getBirthDate() : info.getBirthDate(),
                 request.getHeight() != null ? request.getHeight() : info.getHeight(),
@@ -90,9 +88,20 @@ public class PregnancyInfoService {
                 request.getGestationalWeek() != null ? request.getGestationalWeek() : info.getGestationalWeek(),
                 request.getExpectedDate() != null ? request.getExpectedDate() : info.getExpectedDate(),
                 request.getIsMultiplePregnancy() != null ? request.getIsMultiplePregnancy() : info.getIsMultiplePregnancy(),
-                request.getMiscarriageHistory() != null ? request.getMiscarriageHistory() : info.getMiscarriageHistory(),
-                job
+                request.getMiscarriageHistory() != null ? request.getMiscarriageHistory() : info.getMiscarriageHistory()
         );
+
+        if (request.getJobIds() != null) {
+            info.clearJobs();
+
+            var jobIds = request.getJobIds();
+            var jobs = jobRepository.findAllById(jobIds);
+
+            if (jobs.size() != jobIds.size()) {
+                throw new CustomException(ExceptionCode.JOB_NOT_FOUND);
+            }
+            jobs.forEach(info::addJob);
+        }
 
         pregnancyInfoRepository.save(info);
         return PregnancyInfoResponse.from(info);
