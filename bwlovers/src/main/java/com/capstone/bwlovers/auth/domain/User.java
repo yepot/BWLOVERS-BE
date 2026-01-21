@@ -55,4 +55,9 @@ public class User {
         }
     }
 
+    public void update(String username, String profileImageUrl) {
+        this.username = username;
+        this.profileImageUrl = profileImageUrl;
+    }
+
 }

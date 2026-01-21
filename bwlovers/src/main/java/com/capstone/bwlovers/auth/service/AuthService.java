@@ -2,9 +2,11 @@ package com.capstone.bwlovers.auth.service;
 
 import com.capstone.bwlovers.auth.domain.OAuthProvider;
 import com.capstone.bwlovers.auth.domain.User;
+import com.capstone.bwlovers.auth.dto.request.UpdateNaverRequest;
 import com.capstone.bwlovers.auth.dto.response.NaverUserInfoResponse;
 import com.capstone.bwlovers.auth.dto.response.NaverTokenResponse;
 import com.capstone.bwlovers.auth.dto.response.TokenResponse;
+import com.capstone.bwlovers.auth.dto.response.UpdateNaverResponse;
 import com.capstone.bwlovers.auth.repository.UserRepository;
 import com.capstone.bwlovers.global.exception.CustomException;
 import com.capstone.bwlovers.global.exception.ExceptionCode;
@@ -13,6 +15,7 @@ import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -125,6 +128,30 @@ public class AuthService {
                 "&client_id=" + clientId +
                 "&redirect_uri=" + redirectUri +
                 "&state=" + state;
+    }
+
+    /*
+    네이버 정보 수정
+     */
+    @Transactional
+    public UpdateNaverResponse updateNaver(User principalUser, UpdateNaverRequest req) {
+        if (principalUser == null) throw new CustomException(ExceptionCode.AUTH_TOKEN_INVALID);
+
+        // 영속 엔티티로 다시 로딩함 (provider/providerId 또는 userId로)
+        User user = userRepository.findById(principalUser.getUserId())
+                .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_FOUND));
+
+        String newUsername = (req.getUsername() == null || req.getUsername().isBlank())
+                ? user.getUsername()
+                : req.getUsername().trim();
+
+        String newProfile = (req.getProfileImageUrl() == null || req.getProfileImageUrl().isBlank())
+                ? user.getProfileImageUrl()
+                : req.getProfileImageUrl().trim();
+
+        user.update(newUsername, newProfile);
+
+        return new UpdateNaverResponse(user.getUsername(), user.getProfileImageUrl());
     }
 
 }
