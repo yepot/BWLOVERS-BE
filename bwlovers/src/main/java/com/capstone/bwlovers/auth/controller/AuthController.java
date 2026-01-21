@@ -1,6 +1,5 @@
 package com.capstone.bwlovers.auth.controller;
 
-import com.capstone.bwlovers.auth.domain.User;
 import com.capstone.bwlovers.auth.dto.request.NaverLoginRequest;
 import com.capstone.bwlovers.auth.dto.request.RefreshRequest;
 import com.capstone.bwlovers.auth.dto.request.UpdateNaverRequest;
@@ -11,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -42,9 +42,10 @@ public class AuthController {
     네이버 로그인 정보 수정 (닉네임, 프로필 사진만)
      */
     @PatchMapping("/naver")
-    public ResponseEntity<UpdateNaverResponse> updateNaver(@RequestBody UpdateNaverRequest request,
-                                                           @AuthenticationPrincipal User user) {
-        UpdateNaverResponse response = authService.updateNaver(user, request);
+    public ResponseEntity<UpdateNaverResponse> updateNaver(@AuthenticationPrincipal OAuth2User principal,
+                                                           @RequestBody UpdateNaverRequest request) {
+        Long userId = principal.getAttribute("userId");
+        UpdateNaverResponse response = authService.updateNaver(userId, request);
         return ResponseEntity.ok(response);
     }
 }

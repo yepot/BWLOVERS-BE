@@ -134,22 +134,18 @@ public class AuthService {
     네이버 정보 수정
      */
     @Transactional
-    public UpdateNaverResponse updateNaver(User principalUser, UpdateNaverRequest req) {
-        if (principalUser == null) throw new CustomException(ExceptionCode.AUTH_TOKEN_INVALID);
+    public UpdateNaverResponse updateNaver(Long userId, UpdateNaverRequest request) {
 
-        // 영속 엔티티로 다시 로딩함 (provider/providerId 또는 userId로)
-        User user = userRepository.findById(principalUser.getUserId())
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_FOUND));
 
-        String newUsername = (req.getUsername() == null || req.getUsername().isBlank())
-                ? user.getUsername()
-                : req.getUsername().trim();
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            user.update(request.getUsername(), user.getProfileImageUrl());
+        }
 
-        String newProfile = (req.getProfileImageUrl() == null || req.getProfileImageUrl().isBlank())
-                ? user.getProfileImageUrl()
-                : req.getProfileImageUrl().trim();
-
-        user.update(newUsername, newProfile);
+        if (request.getProfileImageUrl() != null && !request.getProfileImageUrl().isBlank()) {
+            user.update(user.getUsername(), request.getProfileImageUrl());
+        }
 
         return new UpdateNaverResponse(user.getUsername(), user.getProfileImageUrl());
     }
