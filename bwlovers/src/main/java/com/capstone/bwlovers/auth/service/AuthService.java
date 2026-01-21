@@ -63,6 +63,7 @@ public class AuthService {
         String email = userInfoRes.getResponse().getEmail();
         String name = userInfoRes.getResponse().getName();
         String mobile = userInfoRes.getResponse().getMobile();
+        String profileImageUrl = userInfoRes.getResponse().getProfileImageUrl();
 
         // DB upsert
         User user = userRepository.findByProviderAndProviderId(OAuthProvider.NAVER, providerId)
@@ -73,6 +74,7 @@ public class AuthService {
                                 .email(email == null ? "unknown@naver.com" : email) // email이 null일 수 있으면 방어
                                 .username(name)
                                 .phone(mobile)
+                                .profileImageUrl(profileImageUrl != null ? profileImageUrl : "/images/default-profile.png")
                                 .build()
                 ));
 
