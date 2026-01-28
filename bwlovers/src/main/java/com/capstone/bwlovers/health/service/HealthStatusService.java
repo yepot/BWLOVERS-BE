@@ -5,12 +5,12 @@ import com.capstone.bwlovers.auth.repository.UserRepository;
 import com.capstone.bwlovers.global.exception.CustomException;
 import com.capstone.bwlovers.global.exception.ExceptionCode;
 import com.capstone.bwlovers.health.domain.*;
-import com.capstone.bwlovers.health.dto.response.HealthStatusResponse;
 import com.capstone.bwlovers.health.dto.request.HealthStatusRequest;
+import com.capstone.bwlovers.health.dto.response.HealthStatusResponse;
 import com.capstone.bwlovers.health.repository.HealthStatusRepository;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -69,6 +69,8 @@ public class HealthStatusService {
         // 이번 임신 확정 진단
         if (request.getPregnancyComplications() != null) {
             for (var type : request.getPregnancyComplications()) {
+                if (type == null) continue;
+
                 PregnancyComplication pc = PregnancyComplication.builder()
                         .pregnancyComplicationType(type)
                         .build();
@@ -147,6 +149,7 @@ public class HealthStatusService {
         // 이번 임신 확정 진단
         if (request.getPregnancyComplications() != null) {
             for (var type : request.getPregnancyComplications()) {
+                if (type == null) continue;
 
                 PregnancyComplication pc = PregnancyComplication.builder()
                         .pregnancyComplicationType(type)
@@ -159,5 +162,4 @@ public class HealthStatusService {
         HealthStatus saved = healthStatusRepository.save(status);
         return HealthStatusResponse.from(saved);
     }
-
 }

@@ -1,5 +1,6 @@
 package com.capstone.bwlovers.health.dto.request;
 
+import com.capstone.bwlovers.health.domain.HealthStatus;
 import com.capstone.bwlovers.health.domain.healthType.ChronicDiseaseType;
 import com.capstone.bwlovers.health.domain.healthType.PregnancyComplicationType;
 import com.capstone.bwlovers.health.domain.healthType.PastDiseaseType;
@@ -18,6 +19,33 @@ public class HealthStatusRequest {
     private List<PastDiseaseItem> pastDiseases;
     private List<ChronicDiseaseItem> chronicDiseases;
     private List<PregnancyComplicationType> pregnancyComplications;
+
+    public static HealthStatusRequest from(HealthStatus healthStatus) {
+        return HealthStatusRequest.builder()
+                .pastDiseases(
+                        healthStatus.getPastDiseases().stream()
+                                .map(p -> PastDiseaseItem.builder()
+                                        .pastDiseaseType(p.getPastDiseaseType())
+                                        .pastCured(p.isPastCured())
+                                        .pastLastTreatedAt(String.valueOf(p.getPastLastTreatedAt()))
+                                        .build()
+                                ).toList()
+                )
+                .chronicDiseases(
+                        healthStatus.getChronicDiseases().stream()
+                                .map(c -> ChronicDiseaseItem.builder()
+                                        .chronicDiseaseType(c.getChronicDiseaseType())
+                                        .chronicOnMedication(c.isChronicOnMedication())
+                                        .build()
+                                ).toList()
+                )
+                .pregnancyComplications(
+                        healthStatus.getPregnancyComplications().stream()
+                                .map(pc -> pc.getPregnancyComplicationType())
+                                .toList()
+                )
+                .build();
+    }
 
     @Getter
     @NoArgsConstructor
