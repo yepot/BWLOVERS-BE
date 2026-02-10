@@ -7,15 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "special_contracts",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_insurance_contract",
-                        columnNames = {"insurance_id", "contract_name", "page_number"})
-        },
-        indexes = {
-                @Index(name = "idx_contract_insurance", columnList = "insurance_id")
-        }
-)
+@Table(name = "special_contracts")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -29,28 +21,28 @@ public class SpecialContract {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "insurance_id", nullable = false)
-    @Setter
     private InsuranceProduct insuranceProduct;
 
     @Column(name = "contract_name", nullable = false)
     private String contractName;
 
-    @Lob
-    @Column(name = "contract_description", nullable = false)
+    @Column(name = "contract_description", columnDefinition = "text")
     private String contractDescription;
 
-    @Lob
-    @Column(name = "key_features", nullable = false)
-    private String keyFeatures;
-
-    @Lob
-    @Column(name = "contract_recommendation_reason", nullable = false)
+    @Column(name = "contract_recommendation_reason", columnDefinition = "text")
     private String contractRecommendationReason;
 
-    @Column(name = "page_number", nullable = false)
+    @Column(name = "key_features", columnDefinition = "text")
+    private String keyFeatures;
+
+    @Column(name = "page_number")
     private Long pageNumber;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public void setInsuranceProduct(InsuranceProduct insuranceProduct) {
+        this.insuranceProduct = insuranceProduct;
+    }
 }
