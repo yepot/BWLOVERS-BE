@@ -3,26 +3,13 @@ package com.capstone.bwlovers.ai.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 @Configuration
 public class RedisConfig {
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory cf) {
-        RedisTemplate<String, Object> t = new RedisTemplate<>();
-        t.setConnectionFactory(cf);
-
-        t.setKeySerializer(new StringRedisSerializer());
-        t.setHashKeySerializer(new StringRedisSerializer());
-
-        GenericJackson2JsonRedisSerializer json = new GenericJackson2JsonRedisSerializer();
-        t.setValueSerializer(json);
-        t.setHashValueSerializer(json);
-
-        t.afterPropertiesSet();
-        return t;
+    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory cf) {
+        return new StringRedisTemplate(cf);
     }
 }

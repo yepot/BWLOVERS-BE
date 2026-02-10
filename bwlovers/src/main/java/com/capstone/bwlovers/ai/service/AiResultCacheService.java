@@ -3,8 +3,14 @@ package com.capstone.bwlovers.ai.service;
 import com.capstone.bwlovers.ai.cache.AiCacheKeys;
 import com.capstone.bwlovers.ai.dto.response.AiRecommendationListResponse;
 import com.capstone.bwlovers.ai.dto.response.AiRecommendationResponse;
+import com.capstone.bwlovers.global.exception.CustomException;
+import com.capstone.bwlovers.global.exception.ExceptionCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -13,25 +19,66 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class AiResultCacheService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    // JSON 직렬화/역직렬화는 ObjectMapper로 통일
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public void saveList(String resultId, AiRecommendationListResponse list, long ttlSec) {
-        redisTemplate.opsForValue().set(AiCacheKeys.listKey(resultId), list, Duration.ofSeconds(ttlSec));
+        String key = AiCacheKeys.listKey(resultId);
+        try {
+            String json = objectMapper.writeValueAsString(list);
+            stringRedisTemplate.opsForValue().set(key, json, Duration.ofSeconds(ttlSec));
+        } catch (RedisConnectionFailureException e) {
+            throw new CustomException(ExceptionCode.REDIS_CONNECTION_FAILED);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ExceptionCode.JSON_SERIALIZATION_FAILED);
+        } catch (DataAccessException e) {
+            throw new CustomException(ExceptionCode.REDIS_SAVE_FAILED);
+        }
     }
 
     public void saveDetail(String resultId, String itemId, AiRecommendationResponse detail, long ttlSec) {
-        redisTemplate.opsForValue().set(AiCacheKeys.detailKey(resultId, itemId), detail, Duration.ofSeconds(ttlSec));
+        String key = AiCacheKeys.detailKey(resultId, itemId);
+        try {
+            String json = objectMapper.writeValueAsString(detail);
+            stringRedisTemplate.opsForValue().set(key, json, Duration.ofSeconds(ttlSec));
+        } catch (RedisConnectionFailureException e) {
+            throw new CustomException(ExceptionCode.REDIS_CONNECTION_FAILED);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ExceptionCode.JSON_SERIALIZATION_FAILED);
+        } catch (DataAccessException e) {
+            throw new CustomException(ExceptionCode.REDIS_SAVE_FAILED);
+        }
     }
 
     public AiRecommendationListResponse getList(String resultId) {
-        Object v = redisTemplate.opsForValue().get(AiCacheKeys.listKey(resultId));
-        return (v == null) ? null : (AiRecommendationListResponse) v;
+        String key = AiCacheKeys.listKey(resultId);
+        try {
+            String json = stringRedisTemplate.opsForValue().get(key);
+            if (json == null) return null;
+            return objectMapper.readValue(json, AiRecommendationListResponse.class);
+        } catch (RedisConnectionFailureException e) {
+            throw new CustomException(ExceptionCode.REDIS_CONNECTION_FAILED);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ExceptionCode.JSON_SERIALIZATION_FAILED);
+        } catch (DataAccessException e) {
+            throw new CustomException(ExceptionCode.REDIS_READ_FAILED);
+        }
     }
 
     public AiRecommendationResponse getDetail(String resultId, String itemId) {
-        Object v = redisTemplate.opsForValue().get(AiCacheKeys.detailKey(resultId, itemId));
-        return (v == null) ? null : (AiRecommendationResponse) v;
+        String key = AiCacheKeys.detailKey(resultId, itemId);
+        try {
+            String json = stringRedisTemplate.opsForValue().get(key);
+            if (json == null) return null;
+            return objectMapper.readValue(json, AiRecommendationResponse.class);
+        } catch (RedisConnectionFailureException e) {
+            throw new CustomException(ExceptionCode.REDIS_CONNECTION_FAILED);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ExceptionCode.JSON_SERIALIZATION_FAILED);
+        } catch (DataAccessException e) {
+            throw new CustomException(ExceptionCode.REDIS_READ_FAILED);
+        }
     }
-
-
 }

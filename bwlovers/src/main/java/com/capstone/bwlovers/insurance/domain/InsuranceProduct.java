@@ -10,14 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "insurance_products",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_user_result", columnNames = {"user_id", "result_id"})
-        },
-        indexes = {
-                @Index(name = "idx_insurance_user_created", columnList = "user_id, created_at")
-        }
-)
+@Table(name = "insurance_products")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -33,8 +26,11 @@ public class InsuranceProduct {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "result_id", nullable = false, length = 64)
+    @Column(name = "result_id", nullable = false)
     private String resultId;
+
+    @Column(name = "item_id", nullable = false)
+    private String itemId;
 
     @Column(name = "insurance_company", nullable = false)
     private String insuranceCompany;
@@ -48,8 +44,7 @@ public class InsuranceProduct {
     @Column(name = "monthly_cost", nullable = false)
     private Long monthlyCost;
 
-    @Lob
-    @Column(name = "insurance_recommendation_reason", nullable = false)
+    @Column(name = "insurance_recommendation_reason", columnDefinition = "text")
     private String insuranceRecommendationReason;
 
     @CreationTimestamp
@@ -60,17 +55,8 @@ public class InsuranceProduct {
     @Builder.Default
     private List<SpecialContract> specialContracts = new ArrayList<>();
 
-    @OneToMany(mappedBy = "insuranceProduct", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<EvidenceSource> evidenceSources = new ArrayList<>();
-
-    public void addContract(SpecialContract contract) {
-        specialContracts.add(contract);
-        contract.setInsuranceProduct(this);
-    }
-
-    public void addEvidence(EvidenceSource evidence) {
-        evidenceSources.add(evidence);
-        evidence.setInsuranceProduct(this);
+    public void addContract(SpecialContract c) {
+        c.setInsuranceProduct(this);
+        this.specialContracts.add(c);
     }
 }

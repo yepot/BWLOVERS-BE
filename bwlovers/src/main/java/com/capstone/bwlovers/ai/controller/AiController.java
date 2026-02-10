@@ -1,7 +1,5 @@
 package com.capstone.bwlovers.ai.controller;
 
-import com.capstone.bwlovers.ai.dto.request.AiSaveSelectedRequest;
-import com.capstone.bwlovers.ai.dto.request.AiCallbackRequest;
 import com.capstone.bwlovers.ai.dto.response.AiRecommendationListResponse;
 import com.capstone.bwlovers.ai.dto.response.AiRecommendationResponse;
 import com.capstone.bwlovers.ai.service.AiResultCacheService;
@@ -12,8 +10,6 @@ import com.capstone.bwlovers.global.exception.ExceptionCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,26 +63,5 @@ public class AiController {
         // fallback(선택): 기존 FastAPI 조회 유지
         return aiService.fetchAiResultDetail(user.getUserId(), resultId, itemId);
     }
-
-    /**
-     * 선택 저장 POST /ai/save
-     * - 기존 그대로
-     */
-    @PostMapping("/save")
-    public Long saveSelected(@AuthenticationPrincipal User user,
-                             @RequestBody AiSaveSelectedRequest request) {
-        return aiService.saveSelected(user.getUserId(), request);
-    }
-
-    /**
-     * 요청 콜백 POST /ai/callback/recommend
-     * - 여기서 Redis에 "리스트/상세" 둘 다 저장함
-     */
-    @PostMapping(path="/callback/recommend", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> receive(@RequestBody AiCallbackRequest body) {
-        aiService.cacheCallbackResult(body);
-        return ResponseEntity.ok().build();
-    }
-
 
 }
