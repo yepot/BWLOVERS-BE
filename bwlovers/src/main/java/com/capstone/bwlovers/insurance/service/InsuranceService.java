@@ -9,14 +9,20 @@ import com.capstone.bwlovers.global.exception.ExceptionCode;
 import com.capstone.bwlovers.insurance.domain.InsuranceProduct;
 import com.capstone.bwlovers.insurance.domain.SpecialContract;
 import com.capstone.bwlovers.insurance.dto.request.InsuranceSelectionSaveRequest;
+import com.capstone.bwlovers.insurance.dto.response.InsuranceDetailListResponse;
+import com.capstone.bwlovers.insurance.dto.response.InsuranceDetailResponse;
+import com.capstone.bwlovers.insurance.dto.response.InsuranceListResponse;
 import com.capstone.bwlovers.insurance.repository.InsuranceProductRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,9 +33,11 @@ public class InsuranceService {
 
     //  캐시에서 상세 가져오기용 (AI 서버 콜 안 하고 Redis 사용)
     private final AiResultCacheService aiResultCacheService;
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /*
+    보험 저장
+     */
     @Transactional
     public Long saveSelected(Long userId, InsuranceSelectionSaveRequest request) {
 
@@ -78,6 +86,7 @@ public class InsuranceService {
                                 .isLongTerm(isLongTerm)
                                 .monthlyCost(detail.getMonthlyCost() == null ? 0L : detail.getMonthlyCost().longValue())
                                 .insuranceRecommendationReason(nullToEmpty(detail.getInsuranceRecommendationReason()))
+                                .memo(nullToEmpty(request.getMemo()))
                                 .build()
                 ));
 
@@ -147,5 +156,119 @@ public class InsuranceService {
 
     private boolean isBlank(String s) {
         return s == null || s.isBlank();
+    }
+
+    /*
+    메모 수정
+     */
+    @Transactional
+    public String updateInsuranceMemo(Long userId, Long insuranceId, String newMemo) {
+        InsuranceProduct insurance = insuranceProductRepository.findById(insuranceId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.INSURANCE_NOT_FOUND));
+        if (!insurance.getUser().getUserId().equals(userId)) {
+            throw new CustomException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        insurance.updateMemo(newMemo);
+        return insurance.getMemo();
+    }
+
+    /*
+    보험 삭제
+     */
+    @Transactional
+    public void deleteInsurance(Long userId, Long insuranceId) {
+        InsuranceProduct insurance = insuranceProductRepository.findById(insuranceId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.INSURANCE_NOT_FOUND));
+        if (!insurance.getUser().getUserId().equals(userId)) {
+            throw new CustomException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        insuranceProductRepository.delete(insurance);
+    }
+
+    /*
+    마이페이지 보험 리스트 조회
+     */
+    @Transactional(readOnly = true)
+    public List<InsuranceListResponse> getMyInsuranceList(Long userId) {
+        List<InsuranceProduct> products = insuranceProductRepository.findAllByUser_UserIdOrderByCreatedAtDesc(userId);
+
+        return products.stream()
+                .map(product -> InsuranceListResponse.builder()
+                        .insuranceId(product.getInsuranceId())
+                        .insuranceCompany(product.getInsuranceCompany())
+                        .productName(product.getProductName())
+                        .createdAt(product.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /*
+    마이페이지 보험 상세 리스트 조회
+     */
+    @Transactional(readOnly = true)
+    public List<InsuranceDetailListResponse> getMyInsuranceDetails(Long userId) {
+        List<InsuranceProduct> products = insuranceProductRepository.findAllByUser_UserIdOrderByCreatedAtDesc(userId);
+
+        return products.stream()
+                .map(product -> InsuranceDetailListResponse.builder()
+                        .insuranceId(product.getInsuranceId())
+                        .insuranceCompany(product.getInsuranceCompany())
+                        .productName(product.getProductName())
+                        .isLongTerm(product.isLongTerm())
+                        .monthlyCost(product.getMonthlyCost())
+                        .memo(product.getMemo())
+                        .createdAt(product.getCreatedAt())
+                        .specialContractNames(product.getSpecialContracts().stream()
+                                .map(sc -> sc.getContractName())
+                                .collect(Collectors.toList()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /*
+    마이페이지 보험 상세보기
+     */
+    @Transactional(readOnly = true)
+    public InsuranceDetailResponse getInsuranceDetail(Long userId, Long insuranceId) {
+        InsuranceProduct insurance = insuranceProductRepository.findById(insuranceId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.INSURANCE_NOT_FOUND));
+        if (!insurance.getUser().getUserId().equals(userId)) {
+            throw new CustomException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        List<InsuranceDetailResponse.SpecialContractDetailDto> contractDtos = insurance.getSpecialContracts().stream()
+                .map(sc -> InsuranceDetailResponse.SpecialContractDetailDto.builder()
+                        .contractId(sc.getContractId())
+                        .contractName(sc.getContractName())
+                        .contractDescription(sc.getContractDescription())
+                        .contractRecommendationReason(sc.getContractRecommendationReason())
+                        .keyFeatures(parseJsonList(sc.getKeyFeatures()))
+                        .pageNumber(sc.getPageNumber())
+                        .build())
+                .collect(Collectors.toList());
+
+        return InsuranceDetailResponse.builder()
+                .insuranceId(insurance.getInsuranceId())
+                .resultId(insurance.getResultId())
+                .itemId(insurance.getItemId())
+                .insuranceCompany(insurance.getInsuranceCompany())
+                .productName(insurance.getProductName())
+                .isLongTerm(insurance.isLongTerm())
+                .monthlyCost(insurance.getMonthlyCost())
+                .insuranceRecommendationReason(insurance.getInsuranceRecommendationReason())
+                .memo(insurance.getMemo())
+                .specialContracts(contractDtos)
+                .build();
+    }
+
+    // JSON 문자열을 리스트로 안전하게 변환하는 헬퍼 메서드
+    private List<String> parseJsonList(String json) {
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return List.of(); // 파싱 실패 시 빈 리스트 반환
+        }
     }
 }
