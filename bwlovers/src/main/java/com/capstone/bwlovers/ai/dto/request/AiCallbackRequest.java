@@ -40,8 +40,11 @@ public class AiCallbackRequest {
         @JsonProperty("is_long_term")
         private Boolean isLongTerm;
 
+        @JsonProperty("sum_insured")
+        private Long sumInsured;
+
         @JsonProperty("monthly_cost")
-        private Integer monthlyCost;
+        private String monthlyCost;
 
         @JsonProperty("insurance_recommendation_reason")
         private String insuranceRecommendationReason;

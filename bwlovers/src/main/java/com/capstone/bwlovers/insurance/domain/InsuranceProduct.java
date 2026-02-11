@@ -41,8 +41,11 @@ public class InsuranceProduct {
     @Column(name = "is_long_term", nullable = false)
     private boolean isLongTerm;
 
+    @Column(name = "sum_insured", nullable = false)
+    private Long sumInsured;
+
     @Column(name = "monthly_cost", nullable = false)
-    private Long monthlyCost;
+    private String monthlyCost;
 
     @Column(name = "insurance_recommendation_reason", columnDefinition = "text")
     private String insuranceRecommendationReason;

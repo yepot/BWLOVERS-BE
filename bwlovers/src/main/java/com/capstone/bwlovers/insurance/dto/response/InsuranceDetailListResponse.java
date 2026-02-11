@@ -13,7 +13,8 @@ public class InsuranceDetailListResponse {
     private String insuranceCompany;
     private String productName;
     private boolean isLongTerm;
-    private Long monthlyCost;
+    private Long sumInsured;
+    private String monthlyCost;
     private String memo;
     private LocalDateTime createdAt;
     private List<String> specialContractNames;

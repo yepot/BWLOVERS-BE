@@ -1,7 +1,6 @@
 package com.capstone.bwlovers.ai.dto.response;
 
 import com.capstone.bwlovers.ai.dto.request.AiCallbackRequest;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,8 +23,11 @@ public class AiRecommendationResponse {
     @JsonProperty("insurance_recommendation_reason")
     private String insuranceRecommendationReason;
 
+    @JsonProperty("sum_insured")
+    private Long sumInsured;
+
     @JsonProperty("monthly_cost")
-    private Integer monthlyCost;
+    private String monthlyCost;
 
     @JsonProperty("special_contracts")
     private List<SpecialContract> specialContracts;
@@ -72,6 +74,7 @@ public class AiRecommendationResponse {
         res.setInsuranceCompany(item.getInsuranceCompany());
         res.setProductName(item.getProductName());
         res.setLongTerm(Boolean.TRUE.equals(item.getIsLongTerm()));
+        res.setSumInsured(item.getSumInsured());
         res.setMonthlyCost(item.getMonthlyCost());
         res.setInsuranceRecommendationReason(item.getInsuranceRecommendationReason());
 

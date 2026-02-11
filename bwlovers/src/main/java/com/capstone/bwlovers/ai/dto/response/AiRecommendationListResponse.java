@@ -40,13 +40,18 @@ public class AiRecommendationListResponse {
         @JsonProperty("is_long_term")
         private Boolean isLongTerm;
 
+        @JsonProperty("sum_insured")
+        private Long sumInsured;
+
         @JsonProperty("monthly_cost")
-        private Integer monthlyCost;
+        private String monthlyCost;
+
+        @JsonProperty("special_contract_count")
+        private Integer specialContractCount;
     }
 
     // callback -> 리스트 요약 변환
     public static AiRecommendationListResponse fromCallback(AiCallbackRequest callback) {
-
         AiRecommendationListResponse res = new AiRecommendationListResponse();
         if (callback == null) {
             res.setItems(Collections.emptyList());
@@ -71,7 +76,12 @@ public class AiRecommendationListResponse {
             item.setInsuranceCompany(it.getInsuranceCompany());
             item.setProductName(it.getProductName());
             item.setIsLongTerm(it.getIsLongTerm());
+            item.setSumInsured(it.getSumInsured());
             item.setMonthlyCost(it.getMonthlyCost());
+
+            int count = (it.getSpecialContracts() != null) ? it.getSpecialContracts().size() : 0;
+            item.setSpecialContractCount(count);
+
             listItems.add(item);
         }
 
