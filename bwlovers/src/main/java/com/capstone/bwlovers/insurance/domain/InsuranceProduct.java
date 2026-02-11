@@ -47,6 +47,9 @@ public class InsuranceProduct {
     @Column(name = "insurance_recommendation_reason", columnDefinition = "text")
     private String insuranceRecommendationReason;
 
+    @Column(name = "memo", nullable = true, columnDefinition = "text")
+    private String memo;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

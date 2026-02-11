@@ -25,4 +25,6 @@ public class InsuranceSelectionSaveRequest {
     @NotEmpty
     @JsonProperty("selectedContractNames")
     private List<String> selectedContractNames;
+
+    private String memo;
 }

@@ -78,6 +78,7 @@ public class InsuranceService {
                                 .isLongTerm(isLongTerm)
                                 .monthlyCost(detail.getMonthlyCost() == null ? 0L : detail.getMonthlyCost().longValue())
                                 .insuranceRecommendationReason(nullToEmpty(detail.getInsuranceRecommendationReason()))
+                                .memo(nullToEmpty(request.getMemo()))
                                 .build()
                 ));
 
