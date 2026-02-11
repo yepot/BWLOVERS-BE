@@ -1,10 +1,10 @@
 package com.capstone.bwlovers.ai.service;
 
+import com.capstone.bwlovers.ai.dto.request.AiCallbackRequest;
 import com.capstone.bwlovers.ai.dto.request.FastApiRequest;
 import com.capstone.bwlovers.ai.dto.response.AiRecommendationListResponse;
-import com.capstone.bwlovers.ai.dto.response.FastApiResponse;
 import com.capstone.bwlovers.ai.dto.response.AiRecommendationResponse;
-import com.capstone.bwlovers.ai.dto.request.AiCallbackRequest;
+import com.capstone.bwlovers.ai.dto.response.FastApiResponse;
 import com.capstone.bwlovers.auth.domain.User;
 import com.capstone.bwlovers.auth.repository.UserRepository;
 import com.capstone.bwlovers.global.exception.CustomException;
@@ -30,9 +30,12 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class AiService {
 
+    private static final long DEFAULT_TTL_SEC = 600L; // 10분
+
     private final UserRepository userRepository;
     private final PregnancyInfoRepository pregnancyInfoRepository;
     private final HealthStatusRepository healthStatusRepository;
+
     private final WebClient aiWebClient;
     private final AiResultCacheService aiResultCacheService;
 
@@ -69,11 +72,12 @@ public class AiService {
     }
 
     // =========================================================
-    // 리스트 → 상세 보기 → 선택 저장
+    // 리스트 → 상세 보기
     // =========================================================
 
     /**
      * 추천 리스트 조회
+     * - FastAPI 응답(list)을 Redis에 저장
      */
     public AiRecommendationListResponse requestAiRecommendationList(Long userId) {
 
@@ -109,6 +113,30 @@ public class AiService {
             log.error("[AI /ai/recommend PARSE ERROR] raw={}", raw, e);
             throw new CustomException(ExceptionCode.AI_SERVER_5XX);
         }
+
+        if (list == null || isBlank(list.getResultId())) {
+            log.warn("[AI /ai/recommend INVALID] resultId is blank. raw={}", raw);
+            throw new CustomException(ExceptionCode.AI_SERVER_5XX);
+        }
+
+        list.normalizeAllCounts();
+
+        long ttlSec = (list.getExpiresInSec() == null ? DEFAULT_TTL_SEC : list.getExpiresInSec());
+
+        // 1) 리스트 저장
+        aiResultCacheService.saveList(list.getResultId(), list, ttlSec);
+
+        // 2) itemId별 상세 캐시 저장
+        //    (현재는 list 응답에 상세 필드가 포함되어 있으므로 fromListItem이 제대로 채워줄 수 있음)
+        if (list.getItems() != null) {
+            for (var item : list.getItems()) {
+                if (item == null || isBlank(item.getItemId())) continue;
+
+                AiRecommendationResponse detail = AiRecommendationResponse.fromListItem(item);
+                aiResultCacheService.saveDetail(list.getResultId(), item.getItemId(), detail, ttlSec);
+            }
+        }
+
         return list;
     }
 
@@ -125,19 +153,41 @@ public class AiService {
             throw new CustomException(ExceptionCode.AI_INVALID_REQUEST);
         }
 
-        // Redis에서 상세 조회
+        log.info("[FETCH DETAIL] Request ResultId: {}, ItemId: {}", resultId, itemId);
+
+        // 1) Redis 캐시 먼저 확인
         AiRecommendationResponse cached = aiResultCacheService.getDetail(resultId, itemId);
-        if (cached == null) {
-            throw new CustomException(ExceptionCode.AI_RESULT_NOT_FOUND);
+        if (cached != null) {
+            log.info("[FETCH DETAIL] Redis cache HIT. itemId={}", itemId);
+            return cached;
         }
 
-        return cached;
+        // 2) Redis에 없으면 FastAPI로 fallback
+        log.info("[FETCH DETAIL] Redis cache MISS -> try FastAPI. resultId={}", resultId);
+
+        AiRecommendationResponse fresh = aiWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/ai/results/{resultId}/items/{itemId}")
+                        .build(resultId, itemId))
+                .retrieve()
+                .onStatus(s -> s.is4xxClientError(),
+                        resp -> Mono.error(new CustomException(ExceptionCode.AI_RESULT_NOT_FOUND)))
+                .onStatus(s -> s.is5xxServerError(),
+                        resp -> Mono.error(new CustomException(ExceptionCode.AI_SERVER_5XX)))
+                .bodyToMono(AiRecommendationResponse.class)
+                .timeout(Duration.ofSeconds(10))
+                .block();
+
+        // 3) FastAPI에서 가져온 데이터 캐시에 저장
+        if (fresh != null) {
+            aiResultCacheService.saveDetail(resultId, itemId, fresh, DEFAULT_TTL_SEC);
+        }
+
+        return fresh;
     }
 
     /**
      * AI callback 결과를 Redis에 저장함
-     * - listKey(resultId) : 리스트 요약
-     * - detailKey(resultId, itemId) : itemId별 상세
      */
     public void cacheCallbackResult(AiCallbackRequest callback) {
 
@@ -145,10 +195,11 @@ public class AiService {
             throw new CustomException(ExceptionCode.AI_INVALID_REQUEST);
         }
 
-        long ttlSec = (callback.getExpiresInSec() == null ? 600L : callback.getExpiresInSec());
+        long ttlSec = (callback.getExpiresInSec() == null ? DEFAULT_TTL_SEC : callback.getExpiresInSec());
 
-        // 1) 리스트 요약 생성 후 저장
+        // 1) 리스트 생성 후 저장
         AiRecommendationListResponse list = AiRecommendationListResponse.fromCallback(callback);
+        // fromCallback 안에서 이미 normalizeCounts 호출됨(안전)
         aiResultCacheService.saveList(callback.getResultId(), list, ttlSec);
 
         // 2) 상세(itemId별) 저장
@@ -160,9 +211,12 @@ public class AiService {
                 aiResultCacheService.saveDetail(callback.getResultId(), item.getItemId(), detail, ttlSec);
             }
         }
+
+        log.info("[AI CALLBACK CACHED] resultId={}, ttlSec={}, items={}",
+                callback.getResultId(),
+                ttlSec,
+                callback.getItems() == null ? 0 : callback.getItems().size());
     }
-
-
 
     // =========================================================
     // private
@@ -172,18 +226,6 @@ public class AiService {
         PregnancyInfoRequest pregnancyInfoRequest = PregnancyInfoRequest.from(pregnancyInfo);
         HealthStatusRequest healthStatusRequest = HealthStatusRequest.from(healthStatus);
         return new FastApiRequest(pregnancyInfoRequest, healthStatusRequest);
-    }
-
-    private String toJson(Object value) {
-        try {
-            return objectMapper.writeValueAsString(value);
-        } catch (Exception e) {
-            throw new CustomException(ExceptionCode.JSON_SERIALIZATION_FAILED);
-        }
-    }
-
-    private String nullToEmpty(String s) {
-        return s == null ? "" : s;
     }
 
     private boolean isBlank(String s) {

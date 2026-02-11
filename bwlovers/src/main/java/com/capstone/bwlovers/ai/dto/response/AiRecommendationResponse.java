@@ -11,6 +11,9 @@ import java.util.List;
 @Setter
 public class AiRecommendationResponse {
 
+    @JsonProperty("itemId")
+    private String itemId;
+
     @JsonProperty("insurance_company")
     private String insuranceCompany;
 
@@ -66,11 +69,17 @@ public class AiRecommendationResponse {
         private String textSnippet;
     }
 
-    // callback item -> 상세 응답 변환
+    // =========================================================
+    // Factory
+    // =========================================================
+
+    /**
+     * callback item -> 상세 응답 변환
+     */
     public static AiRecommendationResponse fromCallbackItem(AiCallbackRequest.Item item) {
 
         AiRecommendationResponse res = new AiRecommendationResponse();
-
+        res.setItemId(item.getItemId());
         res.setInsuranceCompany(item.getInsuranceCompany());
         res.setProductName(item.getProductName());
         res.setLongTerm(Boolean.TRUE.equals(item.getIsLongTerm()));
@@ -95,6 +104,53 @@ public class AiRecommendationResponse {
         }
 
         // evidence_sources 변환
+        if (item.getEvidenceSources() != null) {
+            List<AiRecommendationResponse.EvidenceSource> sources = item.getEvidenceSources().stream()
+                    .map(es -> {
+                        AiRecommendationResponse.EvidenceSource e = new AiRecommendationResponse.EvidenceSource();
+                        e.setPageNumber(es.getPageNumber());
+                        e.setTextSnippet(es.getTextSnippet());
+                        return e;
+                    })
+                    .toList();
+            res.setEvidenceSources(sources);
+        }
+
+        return res;
+    }
+
+    /**
+     * 리스트 item -> "임시 상세" 변환
+     */
+    // 리스트 item -> 상세 응답 변환 (리스트에 상세가 내려오면 그대로 채움)
+    public static AiRecommendationResponse fromListItem(AiRecommendationListResponse.Item item) {
+
+        AiRecommendationResponse res = new AiRecommendationResponse();
+        res.setItemId(item.getItemId());
+        res.setInsuranceCompany(item.getInsuranceCompany());
+        res.setProductName(item.getProductName());
+        res.setLongTerm(Boolean.TRUE.equals(item.getIsLongTerm()));
+        res.setSumInsured(item.getSumInsured());
+        res.setMonthlyCost(item.getMonthlyCost());
+        res.setInsuranceRecommendationReason(item.getInsuranceRecommendationReason());
+
+        // special_contracts (리스트에 있는 걸 그대로 상세에 매핑함)
+        if (item.getSpecialContracts() != null) {
+            List<AiRecommendationResponse.SpecialContract> contracts = item.getSpecialContracts().stream()
+                    .map(sc -> {
+                        AiRecommendationResponse.SpecialContract c = new AiRecommendationResponse.SpecialContract();
+                        c.setContractName(sc.getContractName());
+                        c.setContractDescription(sc.getContractDescription());
+                        c.setContractRecommendationReason(sc.getContractRecommendationReason());
+                        c.setKeyFeatures(sc.getKeyFeatures());
+                        c.setPageNumber(sc.getPageNumber());
+                        return c;
+                    })
+                    .toList();
+            res.setSpecialContracts(contracts);
+        }
+
+        // evidence_sources (리스트에 있는 걸 그대로 상세에 매핑함)
         if (item.getEvidenceSources() != null) {
             List<AiRecommendationResponse.EvidenceSource> sources = item.getEvidenceSources().stream()
                     .map(es -> {
