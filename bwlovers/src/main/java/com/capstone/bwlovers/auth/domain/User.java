@@ -42,6 +42,9 @@ public class User {
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
+    @Column(name = "naver_access_token", length = 500) // 네이버 연동 해제용
+    private String naverAccessToken;
+
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private PregnancyInfo pregnancyInfo;
 
@@ -53,6 +56,10 @@ public class User {
         if (healthStatus != null && healthStatus.getUser() != this) {
             healthStatus.setUser(this);
         }
+    }
+
+    public void updateNaverToken(String naverAccessToken) {
+        this.naverAccessToken = naverAccessToken;
     }
 
     public void update(String username, String profileImageUrl) {
