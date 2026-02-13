@@ -13,13 +13,16 @@ import com.capstone.bwlovers.global.exception.ExceptionCode;
 import com.capstone.bwlovers.global.security.jwt.JwtProvider;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -47,47 +50,35 @@ public class AuthService {
         System.out.println("redirectUri: " + redirectUri);
         System.out.println("==========================");
 
-        if (code == null || code.isBlank()) throw new CustomException(ExceptionCode.ILLEGAL_ARGUMENT);
-
-        // code -> naver access token
+        // 네이버 토큰 요청
         NaverTokenResponse tokenRes = oAuthClient.requestToken(code, state, clientId, clientSecret, redirectUri);
         String naverAccessToken = tokenRes.getAccessToken();
-        if (naverAccessToken == null || naverAccessToken.isBlank()) {
-            throw new CustomException(ExceptionCode.AUTH_TOKEN_EMPTY);
-        }
 
-        // naver access token -> user info
+        // 네이버 유저정보 요청
         NaverUserInfoResponse userInfoRes = oAuthClient.requestUserInfo(naverAccessToken);
-        if (userInfoRes == null || userInfoRes.getResponse() == null || userInfoRes.getResponse().getId() == null) {
-            throw new CustomException(ExceptionCode.LOGIN_ERROR);
-        }
-
         String providerId = userInfoRes.getResponse().getId();
-        String email = userInfoRes.getResponse().getEmail();
-        String name = userInfoRes.getResponse().getName();
-        String mobile = userInfoRes.getResponse().getMobile();
-        String profileImageUrl = userInfoRes.getResponse().getProfileImageUrl();
 
-        // DB upsert
+        // DB upsert (토큰 업데이트 포함)
         User user = userRepository.findByProviderAndProviderId(OAuthProvider.NAVER, providerId)
+                .map(u -> {
+                    u.updateNaverToken(naverAccessToken); // 기존 유저면 토큰만 갱신
+                    return u;
+                })
                 .orElseGet(() -> userRepository.save(
                         User.builder()
                                 .provider(OAuthProvider.NAVER)
                                 .providerId(providerId)
-                                .email(email == null ? "unknown@naver.com" : email) // email이 null일 수 있으면 방어
-                                .username(name)
-                                .phone(mobile)
-                                .profileImageUrl(profileImageUrl != null ? profileImageUrl : "/images/default-profile.png")
+                                .email(userInfoRes.getResponse().getEmail())
+                                .username(userInfoRes.getResponse().getName())
+                                .phone(userInfoRes.getResponse().getMobile())
+                                .profileImageUrl(userInfoRes.getResponse().getProfileImageUrl())
+                                .naverAccessToken(naverAccessToken) // 신규 유저 토큰 저장
                                 .build()
                 ));
 
-        // JWT 발급 (subject는 유저 식별자로)
+        // 서비스 JWT 발급
         String subject = user.getProvider().name() + ":" + user.getProviderId();
-
-        return new TokenResponse(
-                jwtProvider.createAccessToken(subject, DEFAULT_ROLES),
-                jwtProvider.createRefreshToken(subject, DEFAULT_ROLES)
-        );
+        return createTokenResponse(subject);
     }
 
     public TokenResponse refreshTokens(String refreshToken) {
@@ -149,5 +140,67 @@ public class AuthService {
 
         return new UpdateNaverResponse(user.getUsername(), user.getProfileImageUrl());
     }
+
+    /*
+    회원 탈퇴
+     */
+    @Transactional
+    public void withdrawBySubject(String subject) {
+        if (subject == null || subject.isBlank()) {
+            throw new CustomException(ExceptionCode.AUTH_TOKEN_INVALID);
+        }
+
+        String[] parts = subject.split(":", 2);
+        if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+            throw new CustomException(ExceptionCode.AUTH_TOKEN_INVALID);
+        }
+
+        OAuthProvider provider;
+        try {
+            provider = OAuthProvider.valueOf(parts[0]);
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ExceptionCode.AUTH_TOKEN_INVALID);
+        }
+
+        String providerId = parts[1];
+
+        User user = userRepository.findByProviderAndProviderId(provider, providerId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_FOUND));
+
+        // 네이버 연동 해제 (best-effort 권장)
+        if (user.getNaverAccessToken() != null && !user.getNaverAccessToken().isBlank()) {
+            try {
+                oAuthClient.deleteNaverLink(user.getNaverAccessToken(), clientId, clientSecret);
+            } catch (Exception e) {
+                log.warn("[WITHDRAW] NAVER unlink failed. userId={}, providerId={}, reason={}",
+                        user.getUserId(),
+                        user.getProviderId(),
+                        e.getMessage()
+                );
+            }
+        }
+
+        // 연관관계 끊기 (FK / orphan 제거 안정화)
+        user.clearRelations();
+        userRepository.delete(user);
+    }
+
+    @Transactional
+    public void withdraw(Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new CustomException(ExceptionCode.AUTH_TOKEN_INVALID);
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof User user)) {
+            throw new CustomException(ExceptionCode.AUTH_TOKEN_INVALID);
+        }
+
+        String subject = user.getProvider().name() + ":" + user.getProviderId();
+        withdrawBySubject(subject);
+    }
+
+
 
 }

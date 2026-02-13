@@ -22,6 +22,7 @@ public class PregnancyInfo {
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
+    @Setter
     private User user;
 
     @Column(name = "birth_date", nullable = false)

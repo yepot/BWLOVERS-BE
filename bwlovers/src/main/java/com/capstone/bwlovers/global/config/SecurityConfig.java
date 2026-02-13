@@ -73,6 +73,7 @@ public class SecurityConfig {
                                 "/login/**",
                                 "/ai/callback/**"
                         ).permitAll()
+                        .requestMatchers("/auth/withdraw").authenticated()
                         .anyRequest().authenticated()
                 )
 
