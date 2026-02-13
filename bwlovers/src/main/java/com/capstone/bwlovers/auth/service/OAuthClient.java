@@ -91,4 +91,38 @@ public class OAuthClient {
             throw new CustomException(ExceptionCode.INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * 네이버 연동 해제 (Unlink)
+     */
+    public void deleteNaverLink(String naverAccessToken, String clientId, String clientSecret) {
+        if (naverAccessToken == null || naverAccessToken.isBlank()) {
+            throw new CustomException(ExceptionCode.AUTH_TOKEN_EMPTY);
+        }
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "delete");
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
+        body.add("access_token", naverAccessToken);
+        body.add("service_provider", "NAVER");
+
+        try {
+            String response = restClient.post()
+                    .uri("https://nid.naver.com/oauth2.0/token")
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+
+            log.info("[NAVER REVOKE RESPONSE] {}", response);
+
+        } catch (RestClientResponseException e) {
+            log.warn("[NAVER REVOKE FAIL] status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new CustomException(ExceptionCode.AUTH_SERVER_ERROR);
+        } catch (Exception e) {
+            log.error("[NAVER REVOKE ERROR]", e);
+            throw new CustomException(ExceptionCode.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

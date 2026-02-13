@@ -45,10 +45,10 @@ public class User {
     @Column(name = "naver_access_token", length = 500) // 네이버 연동 해제용
     private String naverAccessToken;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private PregnancyInfo pregnancyInfo;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private HealthStatus healthStatus;
 
     public void setHealthStatus(HealthStatus healthStatus) {
@@ -66,5 +66,17 @@ public class User {
         this.username = username;
         this.profileImageUrl = profileImageUrl;
     }
+
+    public void clearRelations() {
+        if (this.pregnancyInfo != null) {
+            this.pregnancyInfo.setUser(null);
+            this.pregnancyInfo = null;
+        }
+        if (this.healthStatus != null) {
+            this.healthStatus.setUser(null);
+            this.healthStatus = null;
+        }
+    }
+
 
 }

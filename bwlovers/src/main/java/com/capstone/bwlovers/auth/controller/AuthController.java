@@ -1,14 +1,18 @@
 package com.capstone.bwlovers.auth.controller;
 
+import com.capstone.bwlovers.auth.domain.User;
 import com.capstone.bwlovers.auth.dto.request.NaverLoginRequest;
 import com.capstone.bwlovers.auth.dto.request.RefreshRequest;
 import com.capstone.bwlovers.auth.dto.request.UpdateNaverRequest;
 import com.capstone.bwlovers.auth.dto.response.TokenResponse;
 import com.capstone.bwlovers.auth.dto.response.UpdateNaverResponse;
 import com.capstone.bwlovers.auth.service.AuthService;
+import com.capstone.bwlovers.global.exception.CustomException;
+import com.capstone.bwlovers.global.exception.ExceptionCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
@@ -48,4 +52,14 @@ public class AuthController {
         UpdateNaverResponse response = authService.updateNaver(userId, request);
         return ResponseEntity.ok(response);
     }
+
+    /*
+    회원 탈퇴
+     */
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<Void> withdraw(Authentication authentication) {
+        authService.withdraw(authentication);
+        return ResponseEntity.noContent().build();
+    }
+
 }
