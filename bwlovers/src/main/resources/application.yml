@@ -53,3 +53,10 @@ jwt:
 ai:
   server:
     url: http://localhost:8000 #추후에 변경 예정
+
+analysis:
+  ocr:
+    job-ttl-seconds: 1800          # Redis TTL 30분
+    max-pages: 10
+    max-file-size-bytes: 10485760  # 10MB
+    local-temp-dir: /tmp/analysis-ocr

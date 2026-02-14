@@ -46,7 +46,18 @@ public enum ExceptionCode {
     REDIS_CONNECTION_FAILED(HttpStatus.SERVICE_UNAVAILABLE, ClientExceptionCode.REDIS_CONNECTION_FAILED, "Redis 서버에 연결할 수 없습니다."),
 
     // Insuracne
-    INSURANCE_NOT_FOUND(HttpStatus.NOT_FOUND, ClientExceptionCode.INSURANCE_NOT_FOUND, "존재하지 않는 보험입니다.");
+    INSURANCE_NOT_FOUND(HttpStatus.NOT_FOUND, ClientExceptionCode.INSURANCE_NOT_FOUND, "존재하지 않는 보험입니다."),
+
+    // OCR
+    OCR_TEMP_FILE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, ClientExceptionCode.OCR_TEMP_FILE_SAVE_FAILED,"OCR 임시 파일 저장에 실패했습니다."),
+    OCR_TEMP_FILE_READ_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, ClientExceptionCode.OCR_TEMP_FILE_READ_FAILED, "OCR 임시 파일 읽기에 실패했습니다."),
+    OCR_TEMP_FILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, ClientExceptionCode.OCR_TEMP_FILE_DELETE_FAILED, "OCR 임시 파일 삭제에 실패했습니다."),
+    OCR_INVALID_REQUEST(HttpStatus.BAD_REQUEST, ClientExceptionCode.OCR_INVALID_REQUEST, "OCR 요청이 올바르지 않습니다."),
+    OCR_TOO_MANY_PAGES(HttpStatus.BAD_REQUEST, ClientExceptionCode.OCR_TOO_MANY_PAGES, "이미지는 최대 10장까지만 업로드할 수 있습니다."),
+    OCR_EMPTY_FILE(HttpStatus.BAD_REQUEST, ClientExceptionCode.OCR_EMPTY_FILE, "빈 파일이 포함되어 있습니다."),
+    OCR_FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, ClientExceptionCode.OCR_FILE_TOO_LARGE, "업로드 파일 용량 제한을 초과했습니다."),
+    OCR_UNSUPPORTED_FILE_TYPE(HttpStatus.BAD_REQUEST, ClientExceptionCode.OCR_UNSUPPORTED_FILE_TYPE, "이미지 파일만 업로드할 수 있습니다."),
+    OCR_JOB_NOT_FOUND(HttpStatus.NOT_FOUND, ClientExceptionCode.OCR_JOB_NOT_FOUND, "OCR 작업 결과를 찾을 수 없습니다. (만료되었거나 존재하지 않습니다.)");
 
     private final HttpStatus httpStatus;
     private final ClientExceptionCode clientExceptionCode;

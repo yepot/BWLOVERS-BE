@@ -1,7 +1,7 @@
 package com.capstone.bwlovers.insurance.service;
 
-import com.capstone.bwlovers.ai.dto.response.AiRecommendationResponse;
-import com.capstone.bwlovers.ai.service.AiResultCacheService;
+import com.capstone.bwlovers.ai.recommendation.dto.response.AiRecommendationResponse;
+import com.capstone.bwlovers.ai.recommendation.service.AiResultCacheService;
 import com.capstone.bwlovers.auth.domain.User;
 import com.capstone.bwlovers.auth.repository.UserRepository;
 import com.capstone.bwlovers.global.exception.CustomException;
