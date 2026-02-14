@@ -1,8 +1,8 @@
-package com.capstone.bwlovers.ai.service;
+package com.capstone.bwlovers.ai.recommendation.service;
 
-import com.capstone.bwlovers.ai.cache.AiCacheKeys;
-import com.capstone.bwlovers.ai.dto.response.AiRecommendationListResponse;
-import com.capstone.bwlovers.ai.dto.response.AiRecommendationResponse;
+import com.capstone.bwlovers.ai.common.cache.AiCacheKeys;
+import com.capstone.bwlovers.ai.recommendation.dto.response.AiRecommendationListResponse;
+import com.capstone.bwlovers.ai.recommendation.dto.response.AiRecommendationResponse;
 import com.capstone.bwlovers.global.exception.CustomException;
 import com.capstone.bwlovers.global.exception.ExceptionCode;
 import com.fasterxml.jackson.core.JsonProcessingException;

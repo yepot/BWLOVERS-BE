@@ -1,10 +1,10 @@
-package com.capstone.bwlovers.ai.service;
+package com.capstone.bwlovers.ai.recommendation.service;
 
-import com.capstone.bwlovers.ai.dto.request.AiCallbackRequest;
-import com.capstone.bwlovers.ai.dto.request.FastApiRequest;
-import com.capstone.bwlovers.ai.dto.response.AiRecommendationListResponse;
-import com.capstone.bwlovers.ai.dto.response.AiRecommendationResponse;
-import com.capstone.bwlovers.ai.dto.response.FastApiResponse;
+import com.capstone.bwlovers.ai.recommendation.dto.request.AiCallbackRequest;
+import com.capstone.bwlovers.ai.recommendation.dto.request.FastApiRequest;
+import com.capstone.bwlovers.ai.recommendation.dto.response.AiRecommendationListResponse;
+import com.capstone.bwlovers.ai.recommendation.dto.response.AiRecommendationResponse;
+import com.capstone.bwlovers.ai.recommendation.dto.response.FastApiResponse;
 import com.capstone.bwlovers.auth.domain.User;
 import com.capstone.bwlovers.auth.repository.UserRepository;
 import com.capstone.bwlovers.global.exception.CustomException;

@@ -1,10 +1,10 @@
-package com.capstone.bwlovers.ai.controller;
+package com.capstone.bwlovers.ai.recommendation.controller;
 
-import com.capstone.bwlovers.ai.dto.request.AiCallbackRequest;
-import com.capstone.bwlovers.ai.dto.response.AiRecommendationListResponse;
-import com.capstone.bwlovers.ai.dto.response.AiRecommendationResponse;
-import com.capstone.bwlovers.ai.service.AiResultCacheService;
-import com.capstone.bwlovers.ai.service.AiService;
+import com.capstone.bwlovers.ai.recommendation.dto.request.AiCallbackRequest;
+import com.capstone.bwlovers.ai.recommendation.dto.response.AiRecommendationListResponse;
+import com.capstone.bwlovers.ai.recommendation.dto.response.AiRecommendationResponse;
+import com.capstone.bwlovers.ai.recommendation.service.AiResultCacheService;
+import com.capstone.bwlovers.ai.recommendation.service.AiService;
 import com.capstone.bwlovers.auth.domain.User;
 import com.capstone.bwlovers.global.exception.CustomException;
 import com.capstone.bwlovers.global.exception.ExceptionCode;
@@ -15,8 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @Slf4j
 @RestController

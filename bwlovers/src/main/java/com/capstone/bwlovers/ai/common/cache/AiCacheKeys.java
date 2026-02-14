@@ -1,4 +1,4 @@
-package com.capstone.bwlovers.ai.cache;
+package com.capstone.bwlovers.ai.common.cache;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -23,4 +23,7 @@ public final class AiCacheKeys {
     public static String detailKey(String resultId, String itemId) {
         return PREFIX + "detail:" + resultId + ":" + itemId;
     }
+
+    // OCR Job
+    public static final String OCR_JOB_PREFIX = "analysis:ocr:job:";
 }
